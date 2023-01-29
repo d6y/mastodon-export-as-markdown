@@ -23,6 +23,8 @@ for post in data["orderedItems"]:
         title_format = "%a %d %b %Y %H:%M"
         title = date_object.strftime(title_format)
 
+        in_reply_to_url = post["object"]["inReplyTo"]
+
         # boosts just have the original post URL as content
         if type(post["object"]) == str:
             content = post["object"]
@@ -44,14 +46,28 @@ for post in data["orderedItems"]:
             file.write(f"date: {date}\n")
             file.write("---\n")
             file.write("\n")
+
+            if in_reply_to_url:
+                parts = in_reply_to_url.split('/')
+                name = parts[4]
+                file.write(f"In reply to [{name}]({in_reply_to_url}):\n\n")
+
             file.write(content)
             file.write("\n\n")
 
             atts = post['object']['attachment']
             for att in atts:
                 name = att['name']
-                img_path = att['url']
-                # w = att['width']
-                # h = att['height']
-                file.write(f"![{name}](/{instance}{img_path})\n\n")
+                media_path = att['url']
+                media_type = att['mediaType']
+                full_media_path = f"/{instance}/{media_path}"
+                
+                if "video" in media_type:
+                    w = att['width']
+                    h = att['height']
+                    file.write(f"<video width='{w}' height='{h}' controls>\n")
+                    file.write(f"<source src='{full_media_path}' type='{media_type}'>\n")
+                    file.write(f"</video>\n")
+                else:
+                    file.write(f"![{name}]({full_media_path})\n\n")
 
